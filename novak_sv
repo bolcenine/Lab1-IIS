@@ -1,0 +1,89 @@
+import pandas as pd
+import ray
+
+# Ініціалізація Ray
+ray.init()
+
+# Зчитуємо дані з CSV-файлу
+df = pd.read_csv('phones_data.csv')
+
+# Функція для знаходження 10 найбільш дорогих смартфонів у 2020 році
+@ray.remote
+def find_top_10_expensive_2020(data):
+    top_10_expensive_2020 = data[data['release_date'].str.contains('2020')].nlargest(10, 'best_price')
+    return top_10_expensive_2020[['model', 'best_price']]
+
+# Викликаємо функцію на роботу
+result = ray.get(find_top_10_expensive_2020.remote(df))
+print(result)
+
+// Завдання 2 
+
+# Функція для порівняння цін Prestigio та Apple
+@ray.remote
+def compare_prestigio_and_apple(data):
+    prestigio_max_price = data[data['manufacturer'] == 'Prestigio']['best_price'].max()
+    apple_min_price = data[data['manufacturer'] == 'Apple']['best_price'].min()
+    return prestigio_max_price < apple_min_price
+
+# Викликаємо функцію на роботу
+result = ray.get(compare_prestigio_and_apple.remote(df))
+if result:
+    print("Так, найбільш дорогий Prestigio коштує менше, ніж найдешевший Apple.")
+else:
+    print("Ні, найдорожчий Prestigio дорожчий або коштує так само, як найдешевший Apple.")
+
+// Завдання 3 
+
+import matplotlib.pyplot as plt
+import ray
+
+# Функція для побудови стовпчикової діаграми
+@ray.remote
+def plot_manufacturer_distribution(data):
+    manufacturer_counts = data['manufacturer'].value_counts()
+    plt.figure(figsize=(10, 6))
+    manufacturer_counts.plot(kind='bar')
+    plt.title('Розподіл кількості смартфонів за виробником')
+    plt.xlabel('Виробник')
+    plt.ylabel('Кількість смартфонів')
+    plt.xticks(rotation=45)
+    plt.show()
+
+# Викликаємо функцію на роботу
+ray.get(plot_manufacturer_distribution.remote(df))
+
+// Завдання 4 
+
+import matplotlib.pyplot as plt
+import ray
+
+# Функція для побудови стовпчикової діаграми
+@ray.remote
+def plot_manufacturer_distribution(data):
+    manufacturer_counts = data['manufacturer'].value_counts()
+    plt.figure(figsize=(10, 6))
+    manufacturer_counts.plot(kind='bar')
+    plt.title('Розподіл кількості смартфонів за виробником')
+    plt.xlabel('Виробник')
+    plt.ylabel('Кількість смартфонів')
+    plt.xticks(rotation=45)
+    plt.show()
+
+# Викликаємо функцію на роботу
+ray.get(plot_manufacturer_distribution.remote(df))
+
+// Завдання 5 
+
+# Функція для порівняння середньої популярності Android та iOS
+@ray.remote
+def compare_android_and_ios_popularity(data):
+    android_ios_data = data[data['platform'].isin(['Android', 'iOS'])]
+    android_ios_data['release_year'] = pd.to_datetime(android_ios_data['release_date']).dt.year
+    android_ios_data = android_ios_data[(android_ios_data['release_year'] >= 2015) & (android_ios_data['release_year'] <= 2023)]
+    popularity_by_platform = android_ios_data.groupby('platform')['popularity'].mean()
+    return popularity_by_platform
+
+# Викликаємо функцію на роботу
+result = ray.get(compare_android_and_ios_popularity.remote(df))
+print(result)
